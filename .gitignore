@@ -1,1 +1,7 @@
 .env
+state/spacebot-data/*
+!state/spacebot-data/.gitkeep
+state/worktrees/*
+!state/worktrees/.gitkeep
+config/spacebot/agents/main/workspace/ingest/*
+!config/spacebot/agents/main/workspace/ingest/.gitkeep

@@ -1,0 +1,71 @@
+[llm]
+openrouter_key = "env:OPENROUTER_API_KEY"
+
+api_bind = "0.0.0.0"
+api_port = 19898
+
+[defaults]
+max_concurrent_branches = 8
+max_turns = 8
+context_window = 128000
+worker_log_mode = "all_combined"
+cron_timezone = "UTC"
+user_timezone = "UTC"
+
+[defaults.routing]
+channel = "env:SPACEBOT_CHANNEL_MODEL"
+branch = "env:SPACEBOT_BRANCH_MODEL"
+worker = "env:SPACEBOT_WORKER_MODEL"
+compactor = "env:SPACEBOT_COMPACTOR_MODEL"
+cortex = "env:SPACEBOT_CORTEX_MODEL"
+
+[defaults.routing.task_overrides]
+coding = "env:SPACEBOT_CODING_MODEL"
+
+[defaults.browser]
+enabled = false
+
+[defaults.opencode]
+enabled = true
+path = "env:OPENCODE_PATH"
+
+[defaults.opencode.permissions]
+edit = "allow"
+bash = "allow"
+webfetch = "allow"
+
+[[agents]]
+id = "main"
+default = true
+workspace = "/data/agents/main/workspace"
+
+[agents.sandbox]
+mode = "enabled"
+writable_paths = ["/workspace/projects", "/workspace/worktrees"]
+passthrough_env = [
+  "ANTHROPIC_API_KEY",
+  "GH_TOKEN",
+  "JIRA_API_TOKEN",
+  "JIRA_BASE_URL",
+  "JIRA_EMAIL",
+  "OPENAI_API_KEY",
+  "OPENROUTER_API_KEY",
+  "OPENCODE_CONFIG",
+  "OPENCODE_PATH",
+  "REPO_CONFIG_FILE",
+  "DEFAULT_BASE_BRANCH",
+  "DEFAULT_REPO_ALIAS",
+  "SPACEBOT_CODING_MODEL",
+  "WORKTREE_BRANCH_PREFIX",
+  "WORKTREE_NAME_TEMPLATE",
+  "WORKTREE_ROOT"
+]
+
+[messaging.telegram]
+enabled = true
+token = "env:TELEGRAM_BOT_TOKEN"
+
+[[bindings]]
+agent_id = "main"
+channel = "telegram"
+chat_id = "env:TELEGRAM_PRIMARY_CHAT_ID"

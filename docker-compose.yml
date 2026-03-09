@@ -1,19 +1,70 @@
 services:
+  spacebot-init:
+    image: spacebot-jira-pr-flow:local
+    container_name: spacebot-init
+    build:
+      context: .
+      dockerfile: Dockerfile
+    user: "0:0"
+    command: >
+      sh -lc "mkdir -p /data/agents/main/data /data/home && chown -R ${LOCAL_UID:-1000}:${LOCAL_GID:-1000} /data"
+    volumes:
+      - ./state/spacebot-data:/data
+    restart: "no"
+
   spacebot:
-    image: ghcr.io/spacedriveapp/spacebot:full
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: spacebot-jira-pr-flow:local
     container_name: spacebot
     restart: unless-stopped
+    depends_on:
+      spacebot-init:
+        condition: service_completed_successfully
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     ports:
-      - "19898:19898"
+      - "19898:19899"
     volumes:
-      - spacebot-data:/data
-      - ${PROJECTS_DIR:-./..}:/data/agents/main/workspace/projects
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ./state/spacebot-data:/data
+      - ${PROJECTS_DIR:-./..}:/workspace/projects
+      - ${WORKTREE_ROOT:-./..}:/workspace/worktrees
+      - ./config/spacebot/config.toml:/data/config.toml:ro
+      - ./config/spacebot/agents/main/workspace:/data/agents/main/workspace
+      - ./config:/opt/spacebot/config:ro
+      - ./scripts:/opt/spacebot/scripts:ro
     environment:
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-    security_opt:
-      - seccomp=unconfined
+      SPACEBOT_DIR: /data
+      HOME: /data/home
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_PRIMARY_CHAT_ID: ${TELEGRAM_PRIMARY_CHAT_ID}
+      JIRA_BASE_URL: ${JIRA_BASE_URL}
+      JIRA_EMAIL: ${JIRA_EMAIL}
+      JIRA_API_TOKEN: ${JIRA_API_TOKEN}
+      GH_TOKEN: ${GH_TOKEN}
+      DEFAULT_REPO_ALIAS: ${DEFAULT_REPO_ALIAS:-main}
+      DEFAULT_BASE_BRANCH: ${DEFAULT_BASE_BRANCH:-main}
+      WORKTREE_ROOT: /workspace/worktrees
+      WORKTREE_BRANCH_PREFIX: ${WORKTREE_BRANCH_PREFIX:-feature}
+      WORKTREE_NAME_TEMPLATE: ${WORKTREE_NAME_TEMPLATE:-{jira_key}}
+      REPO_CONFIG_FILE: ${REPO_CONFIG_FILE:-/opt/spacebot/config/repositories.json}
+      SPACEBOT_CHANNEL_MODEL: ${SPACEBOT_CHANNEL_MODEL:-openrouter/anthropic/claude-sonnet-4-20250514}
+      SPACEBOT_BRANCH_MODEL: ${SPACEBOT_BRANCH_MODEL:-openrouter/anthropic/claude-sonnet-4-20250514}
+      SPACEBOT_WORKER_MODEL: ${SPACEBOT_WORKER_MODEL:-openrouter/anthropic/claude-sonnet-4-20250514}
+      SPACEBOT_COMPACTOR_MODEL: ${SPACEBOT_COMPACTOR_MODEL:-openrouter/anthropic/claude-sonnet-4-20250514}
+      SPACEBOT_CORTEX_MODEL: ${SPACEBOT_CORTEX_MODEL:-openrouter/anthropic/claude-sonnet-4-20250514}
+      SPACEBOT_CODING_MODEL: ${SPACEBOT_CODING_MODEL:-openrouter/anthropic/claude-sonnet-4-20250514}
+      OPENCODE_PATH: ${OPENCODE_PATH:-/usr/local/bin/opencode}
+      OPENCODE_CONFIG: /opt/spacebot/config/opencode/opencode.json
     shm_size: 1gb
 
-volumes:
-  spacebot-data:
+  spacebot-web-proxy:
+    image: alpine/socat
+    container_name: spacebot-web-proxy
+    network_mode: "service:spacebot"
+    depends_on:
+      spacebot:
+        condition: service_started
+    command: "TCP-LISTEN:19899,fork,reuseaddr,bind=0.0.0.0 TCP:127.0.0.1:19898"
+    restart: unless-stopped

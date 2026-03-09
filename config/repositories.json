@@ -1,0 +1,13 @@
+{
+  "default_alias": "main",
+  "project_key_map": {
+    "PROJ": "main"
+  },
+  "repositories": {
+    "main": {
+      "relative_path": "replace-with-your-repo",
+      "base_branch": "main",
+      "branch_prefix": "feature"
+    }
+  }
+}
