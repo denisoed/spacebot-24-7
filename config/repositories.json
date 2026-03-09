@@ -5,7 +5,7 @@
   },
   "repositories": {
     "main": {
-      "relative_path": "replace-with-your-repo",
+      "relative_path": "spacebot-docker",
       "base_branch": "main",
       "branch_prefix": "feature"
     }
