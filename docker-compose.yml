@@ -1,0 +1,19 @@
+services:
+  spacebot:
+    image: ghcr.io/spacedriveapp/spacebot:full
+    container_name: spacebot
+    restart: unless-stopped
+    ports:
+      - "19898:19898"
+    volumes:
+      - spacebot-data:/data
+      - ${PROJECTS_DIR:-./..}:/data/agents/main/workspace/projects
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    security_opt:
+      - seccomp=unconfined
+    shm_size: 1gb
+
+volumes:
+  spacebot-data:
